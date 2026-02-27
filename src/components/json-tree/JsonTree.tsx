@@ -21,19 +21,19 @@ const TreeToolbar: React.FC = () => {
         Collapse All
       </Button>
       <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => expandToDepth(depth)}
-        >
-          Expand to depth:
-        </Button>
+        <span className="text-xs text-text-secondary font-serif px-2 py-1">
+          Depth:
+        </span>
         <input
           type="number"
           min={0}
           max={20}
           value={depth}
-          onChange={(e) => setDepth(Number(e.target.value))}
+          onChange={(e) => {
+            const val = Number(e.target.value);
+            setDepth(val);
+            expandToDepth(val);
+          }}
           className="w-12 px-1 py-0.5 text-xs font-mono border border-border rounded-btn bg-bg-input text-text-primary text-center focus:outline-none focus:shadow-focus"
         />
       </div>
