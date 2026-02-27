@@ -1,0 +1,30 @@
+export const theme = {
+  colors: {
+    bgPrimary: '#F4F3EE',
+    bgSecondary: '#FAF8F4',
+    bgInput: '#FFFFFF',
+    surface: '#EDE8DC',
+    terra: '#C15F3C',
+    terraDark: '#A8502F',
+    terraLight: '#F0D6C8',
+    textPrimary: '#2D2B28',
+    textSecondary: '#6B6560',
+    textMuted: '#9C958C',
+    border: '#DDD8CE',
+    borderSubtle: '#EDE8DC',
+  },
+  syntax: {
+    key: '#2D2B28',
+    string: '#B35C3A',
+    number: '#7B6524',
+    boolean: '#6B5B95',
+    null: '#9C958C',
+    bracket: '#8B8078',
+    punctuation: '#B1ADA1',
+  },
+  diff: {
+    added: { bg: '#E6F4E2', text: '#2D6A2E' },
+    removed: { bg: '#FDECEA', text: '#A8302A' },
+    modified: { bg: '#FFF3CD', text: '#856404' },
+  },
+} as const;

@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', ui-serif, serif;
+  color: #2D2B28;
+  background-color: #F4F3EE;
+}
+
+.dotted-grid {
+  background-color: #F4F3EE;
+  background-image: radial-gradient(circle, #D5CFC4 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DDD8CE;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9C958C;
+}
