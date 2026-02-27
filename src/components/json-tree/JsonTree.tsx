@@ -2,41 +2,74 @@ import React, { useState } from 'react';
 import type { JsonValue } from '@/types/json';
 import { TreeProvider, useTreeContext } from '@/components/json-tree/TreeContext';
 import TreeNode from '@/components/json-tree/TreeNode';
+import GraphView from '@/components/json-tree/GraphView';
 import Button from '@/components/ui/Button';
+
+type ViewMode = 'list' | 'graph';
 
 interface JsonTreeProps {
   data: JsonValue;
 }
 
-const TreeToolbar: React.FC = () => {
+const TreeToolbar: React.FC<{
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+}> = ({ viewMode, onViewModeChange }) => {
   const { expandAll, collapseAll, expandToDepth } = useTreeContext();
   const [depth, setDepth] = useState(2);
 
   return (
     <div className="flex items-center gap-2 mb-2 flex-wrap">
-      <Button variant="ghost" size="sm" onClick={expandAll}>
-        Expand All
-      </Button>
-      <Button variant="ghost" size="sm" onClick={collapseAll}>
-        Collapse All
-      </Button>
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-text-secondary font-serif px-2 py-1">
-          Depth:
-        </span>
-        <input
-          type="number"
-          min={0}
-          max={20}
-          value={depth}
-          onChange={(e) => {
-            const val = Number(e.target.value);
-            setDepth(val);
-            expandToDepth(val);
-          }}
-          className="w-12 px-1 py-0.5 text-xs font-mono border border-border rounded-btn bg-bg-input text-text-primary text-center focus:outline-none focus:shadow-focus"
-        />
+      <div className="flex items-center border border-border rounded-btn overflow-hidden">
+        <button
+          onClick={() => onViewModeChange('list')}
+          className={`px-2.5 py-1 text-xs font-serif transition-colors ${
+            viewMode === 'list'
+              ? 'bg-terra-light text-terra'
+              : 'bg-bg-secondary text-text-secondary hover:bg-surface'
+          }`}
+        >
+          List
+        </button>
+        <button
+          onClick={() => onViewModeChange('graph')}
+          className={`px-2.5 py-1 text-xs font-serif transition-colors ${
+            viewMode === 'graph'
+              ? 'bg-terra-light text-terra'
+              : 'bg-bg-secondary text-text-secondary hover:bg-surface'
+          }`}
+        >
+          Graph
+        </button>
       </div>
+
+      {viewMode === 'list' && (
+        <>
+          <Button variant="ghost" size="sm" onClick={expandAll}>
+            Expand All
+          </Button>
+          <Button variant="ghost" size="sm" onClick={collapseAll}>
+            Collapse All
+          </Button>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-text-secondary font-serif px-2 py-1">
+              Depth:
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={20}
+              value={depth}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setDepth(val);
+                expandToDepth(val);
+              }}
+              className="w-12 px-1 py-0.5 text-xs font-mono border border-border rounded-btn bg-bg-input text-text-primary text-center focus:outline-none focus:shadow-focus"
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -85,12 +118,18 @@ const TreeContent: React.FC<{ data: JsonValue }> = ({ data }) => {
 };
 
 const JsonTree: React.FC<JsonTreeProps> = ({ data }) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+
   return (
     <TreeProvider data={data}>
-      <TreeToolbar />
-      <div className="font-mono text-sm overflow-auto">
-        <TreeContent data={data} />
-      </div>
+      <TreeToolbar viewMode={viewMode} onViewModeChange={setViewMode} />
+      {viewMode === 'list' ? (
+        <div className="font-mono text-sm overflow-auto">
+          <TreeContent data={data} />
+        </div>
+      ) : (
+        <GraphView data={data} />
+      )}
     </TreeProvider>
   );
 };
