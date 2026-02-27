@@ -5,13 +5,19 @@ import type { SidebarView } from '@/types/ui';
 const STORAGE_KEY = 'jsonviewer_tabs';
 const SAVE_DEBOUNCE_MS = 500;
 
-let nextTabNumber = 1;
+function nextLabel(tabs: TabData[]): string {
+  const nums = tabs.map((t) => {
+    const m = t.label.match(/^Tab (\d+)$/);
+    return m ? parseInt(m[1], 10) : 0;
+  });
+  const max = nums.length > 0 ? Math.max(...nums) : 0;
+  return `Tab ${max + 1}`;
+}
 
-function createTab(initialInput = '', label?: string): TabData {
-  const num = nextTabNumber++;
+function createTab(tabs: TabData[], initialInput = ''): TabData {
   return {
     id: crypto.randomUUID(),
-    label: label ?? `Tab ${num}`,
+    label: nextLabel(tabs),
     rawInput: initialInput,
     sidebarView: 'beautify',
     createdAt: Date.now(),
@@ -44,32 +50,19 @@ export function useTabsStore() {
     chrome.storage.local.get(STORAGE_KEY, (result) => {
       let stored: TabsState | null = result[STORAGE_KEY] ?? null;
 
-      // Restore nextTabNumber from existing tabs
-      if (stored && stored.tabs.length > 0) {
-        const maxNum = stored.tabs.reduce((max, tab) => {
-          const match = tab.label.match(/^Tab (\d+)$/);
-          return match ? Math.max(max, parseInt(match[1], 10)) : max;
-        }, 0);
-        nextTabNumber = maxNum + 1;
-      }
-
       const pendingJson = readPendingJson();
 
       if (pendingJson) {
-        // Create a new tab with the pending JSON
-        const newTab = createTab(pendingJson);
-        if (stored && stored.tabs.length > 0) {
-          stored = {
-            tabs: [...stored.tabs, newTab],
-            activeTabId: newTab.id,
-          };
-        } else {
-          stored = { tabs: [newTab], activeTabId: newTab.id };
-        }
+        const existingTabs = stored?.tabs ?? [];
+        const newTab = createTab(existingTabs, pendingJson);
+        stored = {
+          tabs: [...existingTabs, newTab],
+          activeTabId: newTab.id,
+        };
       }
 
       if (!stored || stored.tabs.length === 0) {
-        const defaultTab = createTab();
+        const defaultTab = createTab([]);
         stored = { tabs: [defaultTab], activeTabId: defaultTab.id };
       }
 
@@ -98,18 +91,17 @@ export function useTabsStore() {
   const activeTab = state.tabs.find((t) => t.id === state.activeTabId) ?? state.tabs[0];
 
   const addTab = useCallback((initialInput = '') => {
-    const newTab = createTab(initialInput);
-    setState((prev) => ({
-      tabs: [...prev.tabs, newTab],
-      activeTabId: newTab.id,
-    }));
+    setState((prev) => {
+      const newTab = createTab(prev.tabs, initialInput);
+      return { tabs: [...prev.tabs, newTab], activeTabId: newTab.id };
+    });
   }, []);
 
   const closeTab = useCallback((id: string) => {
     setState((prev) => {
       const remaining = prev.tabs.filter((t) => t.id !== id);
       if (remaining.length === 0) {
-        const newTab = createTab();
+        const newTab = createTab([]);
         return { tabs: [newTab], activeTabId: newTab.id };
       }
       const newActiveId =
