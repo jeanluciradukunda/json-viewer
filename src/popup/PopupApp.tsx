@@ -15,7 +15,10 @@ export default function PopupApp() {
   const { parsed, error, stats } = useJsonParser(rawInput);
 
   const handleExpand = () => {
-    const url = chrome.runtime.getURL('src/fullpage/fullpage.html');
+    const base = chrome.runtime.getURL('src/fullpage/fullpage.html');
+    const url = rawInput
+      ? `${base}?json=${btoa(encodeURIComponent(rawInput))}`
+      : base;
     chrome.tabs.create({ url });
   };
 

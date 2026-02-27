@@ -12,6 +12,7 @@ interface AppShellProps {
   onExpand?: () => void;
   stats: JsonStats | null;
   isPopup?: boolean;
+  tabBar?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -21,6 +22,7 @@ const AppShell: React.FC<AppShellProps> = ({
   onExpand,
   stats,
   isPopup,
+  tabBar,
   children,
 }) => {
   return (
@@ -30,6 +32,7 @@ const AppShell: React.FC<AppShellProps> = ({
         style={isPopup ? { width: '400px', height: '500px' } : undefined}
       >
         <Header onExpand={onExpand} isPopup={isPopup} />
+        {tabBar}
         <div className="flex flex-1 overflow-hidden">
           <Sidebar
             activeView={activeView}
