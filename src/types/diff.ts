@@ -1,8 +1,14 @@
 export type DiffType = 'added' | 'removed' | 'modified' | 'unchanged';
 
+export interface DiffSegment {
+  text: string;
+  highlight: boolean;
+}
+
 export interface DiffLine {
   type: DiffType;
   content: string;
+  segments?: DiffSegment[];
   lineNumber?: number;
 }
 
