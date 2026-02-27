@@ -22,6 +22,18 @@ const isArray = (val: JsonValue): val is JsonValue[] =>
 const isPrimitive = (val: JsonValue): val is string | number | boolean | null =>
   val === null || typeof val !== 'object';
 
+function formatPrimitive(value: string | number | boolean | null): string {
+  if (value === null) return 'null';
+  if (typeof value === 'string') return value;
+  return String(value);
+}
+
+function formatKeyValue(name: string | number, value: string | number | boolean | null): string {
+  const key = typeof name === 'number' ? `[${name}]` : name;
+  const val = value === null ? 'null' : typeof value === 'string' ? `"${value}"` : String(value);
+  return `"${key}": ${val}`;
+}
+
 const TreeNode: React.FC<TreeNodeProps> = React.memo(({ name, value, path, depth }) => {
   const { isExpanded, toggle, matchPaths } = useTreeContext();
   const highlighted = matchPaths.has(path);
@@ -35,9 +47,10 @@ const TreeNode: React.FC<TreeNodeProps> = React.memo(({ name, value, path, depth
         <TreeKey name={name} path={path} />
         <span className="text-syn-punctuation font-mono text-sm mx-1">:</span>
         <TreeValue value={value} />
-        <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-          <span className="text-text-muted text-xs font-mono">{path}</span>
-          <CopyButton text={path} />
+        <span className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pl-3">
+          <CopyButton text={formatPrimitive(value)} label="val" />
+          <CopyButton text={formatKeyValue(name, value)} label="pair" />
+          <CopyButton text={path} label="path" />
         </span>
       </div>
     );
@@ -68,9 +81,9 @@ const TreeNode: React.FC<TreeNodeProps> = React.memo(({ name, value, path, depth
           bracketType={bracketType}
           childCount={entries.length}
         />
-        <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-          <span className="text-text-muted text-xs font-mono">{path}</span>
-          <CopyButton text={path} />
+        <span className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pl-3">
+          <CopyButton text={JSON.stringify(value, null, 2)} label="val" />
+          <CopyButton text={path} label="path" />
         </span>
       </div>
       {expanded && (

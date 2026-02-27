@@ -13,6 +13,34 @@ function sortKeys(value: JsonValue): JsonValue {
 }
 
 /**
+ * Similarity ratio between two strings (0 to 1).
+ * Uses LCS length / max length — fast enough for line-level comparisons.
+ */
+function lineSimilarity(a: string, b: string): number {
+  if (a === b) return 1;
+  const n = a.length;
+  const m = b.length;
+  if (n === 0 || m === 0) return 0;
+
+  // LCS length via single-row DP (space-efficient)
+  let prev = new Array(m + 1).fill(0);
+  let curr = new Array(m + 1).fill(0);
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        curr[j] = prev[j - 1] + 1;
+      } else {
+        curr[j] = Math.max(prev[j], curr[j - 1]);
+      }
+    }
+    [prev, curr] = [curr, prev];
+    curr.fill(0);
+  }
+  const lcsLen = prev[m];
+  return lcsLen / Math.max(n, m);
+}
+
+/**
  * LCS-based line diff.
  */
 function computeLineDiff(
@@ -183,43 +211,75 @@ export function computeDiff(left: JsonValue, right: JsonValue): DiffResult {
       oi++;
     }
 
-    // Pair up deletes and inserts as modifications (char-level diff)
-    const paired = Math.min(deletes.length, inserts.length);
-    for (let p = 0; p < paired; p++) {
-      const { oldSegs, newSegs } = computeCharDiff(leftLines[deletes[p]], rightLines[inserts[p]]);
-      leftDiffLines.push({
-        type: 'modified',
-        content: leftLines[deletes[p]],
-        segments: oldSegs,
-        lineNumber: deletes[p] + 1,
-      });
-      rightDiffLines.push({
-        type: 'modified',
-        content: rightLines[inserts[p]],
-        segments: newSegs,
-        lineNumber: inserts[p] + 1,
-      });
-      summary.modified++;
+    // Pair deletes with inserts by similarity (best match first)
+    const pairedDeletes = new Set<number>();
+    const pairedInserts = new Set<number>();
+    const pairs: { dIdx: number; iIdx: number }[] = [];
+
+    if (deletes.length > 0 && inserts.length > 0) {
+      // Build similarity scores for all delete-insert combinations
+      const scores: { dIdx: number; iIdx: number; sim: number }[] = [];
+      for (let d = 0; d < deletes.length; d++) {
+        for (let ins = 0; ins < inserts.length; ins++) {
+          const sim = lineSimilarity(leftLines[deletes[d]], rightLines[inserts[ins]]);
+          // Only consider pairing if lines are at least 40% similar
+          if (sim >= 0.4) {
+            scores.push({ dIdx: d, iIdx: ins, sim });
+          }
+        }
+      }
+
+      // Greedy: pick best similarity pairs first
+      scores.sort((a, b) => b.sim - a.sim);
+      for (const s of scores) {
+        if (pairedDeletes.has(s.dIdx) || pairedInserts.has(s.iIdx)) continue;
+        pairedDeletes.add(s.dIdx);
+        pairedInserts.add(s.iIdx);
+        pairs.push({ dIdx: s.dIdx, iIdx: s.iIdx });
+      }
     }
 
-    // Remaining unpaired deletes
-    for (let p = paired; p < deletes.length; p++) {
-      leftDiffLines.push({
-        type: 'removed',
-        content: leftLines[deletes[p]],
-        segments: [{ text: leftLines[deletes[p]], highlight: true }],
-        lineNumber: deletes[p] + 1,
-      });
-      summary.removed++;
+    // Emit paired lines as modifications with char-level diff
+    // Sort pairs by delete index to keep output order stable
+    pairs.sort((a, b) => a.dIdx - b.dIdx);
+
+    // Emit unpaired deletes, paired modifications, and unpaired inserts
+    for (let d = 0; d < deletes.length; d++) {
+      if (pairedDeletes.has(d)) {
+        const pair = pairs.find(p => p.dIdx === d)!;
+        const { oldSegs, newSegs } = computeCharDiff(leftLines[deletes[d]], rightLines[inserts[pair.iIdx]]);
+        leftDiffLines.push({
+          type: 'modified',
+          content: leftLines[deletes[d]],
+          segments: oldSegs,
+          lineNumber: deletes[d] + 1,
+        });
+        rightDiffLines.push({
+          type: 'modified',
+          content: rightLines[inserts[pair.iIdx]],
+          segments: newSegs,
+          lineNumber: inserts[pair.iIdx] + 1,
+        });
+        summary.modified++;
+      } else {
+        leftDiffLines.push({
+          type: 'removed',
+          content: leftLines[deletes[d]],
+          segments: [{ text: leftLines[deletes[d]], highlight: true }],
+          lineNumber: deletes[d] + 1,
+        });
+        summary.removed++;
+      }
     }
 
-    // Remaining unpaired inserts
-    for (let p = paired; p < inserts.length; p++) {
+    // Unpaired inserts
+    for (let ins = 0; ins < inserts.length; ins++) {
+      if (pairedInserts.has(ins)) continue;
       rightDiffLines.push({
         type: 'added',
-        content: rightLines[inserts[p]],
-        segments: [{ text: rightLines[inserts[p]], highlight: true }],
-        lineNumber: inserts[p] + 1,
+        content: rightLines[inserts[ins]],
+        segments: [{ text: rightLines[inserts[ins]], highlight: true }],
+        lineNumber: inserts[ins] + 1,
       });
       summary.added++;
     }

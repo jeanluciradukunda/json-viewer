@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { JsonValue } from '@/types/json';
 import { formatJson } from '@/utils/json-formatter';
+import CopyButton from '@/components/ui/CopyButton';
 
 type TokenType = 'key' | 'string' | 'number' | 'boolean' | 'null' | 'bracket' | 'punctuation' | 'whitespace';
 
@@ -112,17 +113,19 @@ interface JsonFormatterProps {
   data: JsonValue;
 }
 
-const JsonFormatter: React.FC<JsonFormatterProps> = ({ data }) => {
-  const lines = useMemo(() => {
-    const formatted = formatJson(data);
-    return formatted.split('\n');
-  }, [data]);
+const JsonFormatter = ({ data }: JsonFormatterProps) => {
+  const formatted = useMemo(() => formatJson(data), [data]);
+  const lines = useMemo(() => formatted.split('\n'), [formatted]);
 
   const lineNumberWidth = String(lines.length).length;
 
   return (
-    <pre className="font-mono text-sm bg-bg-input border border-border rounded-card p-3 overflow-auto">
-      <code>
+    <div className="relative">
+      <div className="absolute top-2 right-2 z-10">
+        <CopyButton text={formatted} label="Copy" />
+      </div>
+      <pre className="font-mono text-sm bg-bg-input border border-border rounded-card p-3 pr-20 overflow-auto">
+        <code>
         {lines.map((line, index) => (
           <div key={index} className="flex">
             <span
@@ -142,6 +145,7 @@ const JsonFormatter: React.FC<JsonFormatterProps> = ({ data }) => {
         ))}
       </code>
     </pre>
+    </div>
   );
 };
 
