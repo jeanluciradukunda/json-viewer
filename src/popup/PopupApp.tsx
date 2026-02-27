@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import AppShell from '@/components/layout/AppShell';
+import EmptyState from '@/components/layout/EmptyState';
 import JsonInput from '@/components/json-editor/JsonInput';
 import JsonFormatter from '@/components/json-editor/JsonFormatter';
 import JsonTree from '@/components/json-tree/JsonTree';
@@ -33,31 +34,31 @@ export default function PopupApp() {
       {view === 'beautify' && (
         <div className="flex flex-col h-full gap-2">
           <JsonInput value={rawInput} onChange={setRawInput} error={error} />
-          {parsed !== undefined && <JsonFormatter data={parsed} />}
+          {parsed !== undefined ? <JsonFormatter data={parsed} /> : <EmptyState />}
         </div>
       )}
       {view === 'tree' && (
         <div className="flex flex-col h-full gap-2">
           <JsonInput value={rawInput} onChange={setRawInput} error={error} />
-          {parsed !== undefined && <JsonTree data={parsed} />}
+          {parsed !== undefined ? <JsonTree data={parsed} /> : <EmptyState />}
         </div>
       )}
       {view === 'compare' && <CompareView />}
       {view === 'search' && (
         <div className="flex flex-col h-full gap-2">
           <JsonInput value={rawInput} onChange={setRawInput} error={error} />
-          {parsed !== undefined && (
+          {parsed !== undefined ? (
             <>
               <SearchOverlay data={parsed} />
               <JsonTree data={parsed} />
             </>
-          )}
+          ) : <EmptyState />}
         </div>
       )}
       {view === 'export' && (
         <div className="flex flex-col h-full gap-2">
           <JsonInput value={rawInput} onChange={setRawInput} error={error} />
-          {parsed !== undefined && <ExportMenu data={parsed} />}
+          {parsed !== undefined ? <ExportMenu data={parsed} /> : <EmptyState />}
         </div>
       )}
     </AppShell>

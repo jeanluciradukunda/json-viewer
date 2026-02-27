@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
+  useReactFlow,
   type Node,
   type Edge,
 } from '@xyflow/react';
@@ -36,13 +37,14 @@ interface FlowData {
   edges: Edge[];
 }
 
-function jsonToFlow(data: JsonValue): FlowData {
+function jsonToFlow(data: JsonValue, maxDepth: number): FlowData {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
-  function walk(value: JsonValue, path: string, label: string) {
+  function walk(value: JsonValue, path: string, label: string, currentDepth: number) {
     const type = getValueType(value);
     const isContainer = type === 'object' || type === 'array';
+    const atDepthLimit = isContainer && currentDepth >= maxDepth;
 
     const nodeData: GraphNodeData = {
       label,
@@ -64,6 +66,8 @@ function jsonToFlow(data: JsonValue): FlowData {
       data: nodeData,
     });
 
+    if (atDepthLimit) return;
+
     if (type === 'object' && value !== null) {
       const entries = Object.entries(value as Record<string, JsonValue>);
       for (const [key, child] of entries) {
@@ -73,7 +77,7 @@ function jsonToFlow(data: JsonValue): FlowData {
           source: path,
           target: childPath,
         });
-        walk(child, childPath, key);
+        walk(child, childPath, key, currentDepth + 1);
       }
     } else if (type === 'array') {
       const arr = value as JsonValue[];
@@ -84,12 +88,12 @@ function jsonToFlow(data: JsonValue): FlowData {
           source: path,
           target: childPath,
         });
-        walk(arr[i], childPath, String(i));
+        walk(arr[i], childPath, String(i), currentDepth + 1);
       }
     }
   }
 
-  walk(data, '$', 'root');
+  walk(data, '$', 'root', 0);
   return { nodes, edges };
 }
 
@@ -121,14 +125,32 @@ function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
 
 interface GraphViewProps {
   data: JsonValue;
+  depth: number;
+  focusNodeId?: string;
 }
 
-const GraphView: React.FC<GraphViewProps> = ({ data }) => {
+const FitToNode: React.FC<{ nodeId?: string }> = ({ nodeId }) => {
+  const { fitView } = useReactFlow();
+
+  useEffect(() => {
+    if (nodeId) {
+      // Small delay to let nodes render after layout
+      const timer = setTimeout(() => {
+        fitView({ nodes: [{ id: nodeId }], duration: 400, padding: 0.5 });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [nodeId, fitView]);
+
+  return null;
+};
+
+const GraphView: React.FC<GraphViewProps> = ({ data, depth, focusNodeId }) => {
   const { nodes, edges } = useMemo(() => {
-    const { nodes: rawNodes, edges } = jsonToFlow(data);
+    const { nodes: rawNodes, edges } = jsonToFlow(data, depth);
     const nodes = applyDagreLayout(rawNodes, edges);
     return { nodes, edges };
-  }, [data]);
+  }, [data, depth]);
 
   return (
     <div className="h-[500px] w-full border border-border rounded-card overflow-hidden">
@@ -144,6 +166,7 @@ const GraphView: React.FC<GraphViewProps> = ({ data }) => {
           showInteractive={false}
           className="!bg-bg-secondary !border-border !shadow-sm [&>button]:!bg-bg-secondary [&>button]:!border-border [&>button]:!fill-text-secondary hover:[&>button]:!bg-surface"
         />
+        <FitToNode nodeId={focusNodeId} />
       </ReactFlow>
     </div>
   );

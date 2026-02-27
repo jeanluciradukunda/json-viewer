@@ -38,3 +38,8 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #9C958C;
 }
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.12); opacity: 0.7; }
+}

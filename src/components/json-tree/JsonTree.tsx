@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { JsonValue } from '@/types/json';
 import { TreeProvider, useTreeContext } from '@/components/json-tree/TreeContext';
 import TreeNode from '@/components/json-tree/TreeNode';
@@ -14,9 +14,10 @@ interface JsonTreeProps {
 const TreeToolbar: React.FC<{
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
-}> = ({ viewMode, onViewModeChange }) => {
+  depth: number;
+  onDepthChange: (depth: number) => void;
+}> = ({ viewMode, onViewModeChange, depth, onDepthChange }) => {
   const { expandAll, collapseAll, expandToDepth } = useTreeContext();
-  const [depth, setDepth] = useState(2);
 
   return (
     <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -51,25 +52,28 @@ const TreeToolbar: React.FC<{
           <Button variant="ghost" size="sm" onClick={collapseAll}>
             Collapse All
           </Button>
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-text-secondary font-serif px-2 py-1">
-              Depth:
-            </span>
-            <input
-              type="number"
-              min={0}
-              max={20}
-              value={depth}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                setDepth(val);
-                expandToDepth(val);
-              }}
-              className="w-12 px-1 py-0.5 text-xs font-mono border border-border rounded-btn bg-bg-input text-text-primary text-center focus:outline-none focus:shadow-focus"
-            />
-          </div>
         </>
       )}
+
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-text-secondary font-serif px-2 py-1">
+          Depth:
+        </span>
+        <input
+          type="number"
+          min={0}
+          max={20}
+          value={depth}
+          onChange={(e) => {
+            const val = Number(e.target.value);
+            onDepthChange(val);
+            if (viewMode === 'list') {
+              expandToDepth(val);
+            }
+          }}
+          className="w-12 px-1 py-0.5 text-xs font-mono border border-border rounded-btn bg-bg-input text-text-primary text-center focus:outline-none focus:shadow-focus"
+        />
+      </div>
     </div>
   );
 };
@@ -119,16 +123,33 @@ const TreeContent: React.FC<{ data: JsonValue }> = ({ data }) => {
 
 const JsonTree: React.FC<JsonTreeProps> = ({ data }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [depth, setDepth] = useState(2);
+  const [focusNodeId, setFocusNodeId] = useState<string | undefined>();
+
+  const onShowInGraph = useCallback((path: string) => {
+    // Calculate the depth of the target node from its path
+    // Each '.' or '[' after '$' indicates a level deeper
+    const segments = path.replace(/\$/,'').split(/(?=\.)|(?=\[)/).filter(Boolean);
+    const nodeDepth = segments.length;
+    setDepth((prev) => Math.max(prev, nodeDepth));
+    setViewMode('graph');
+    setFocusNodeId(path);
+  }, []);
 
   return (
-    <TreeProvider data={data}>
-      <TreeToolbar viewMode={viewMode} onViewModeChange={setViewMode} />
+    <TreeProvider data={data} onShowInGraph={onShowInGraph}>
+      <TreeToolbar
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        depth={depth}
+        onDepthChange={setDepth}
+      />
       {viewMode === 'list' ? (
         <div className="font-mono text-sm overflow-auto">
           <TreeContent data={data} />
         </div>
       ) : (
-        <GraphView data={data} />
+        <GraphView data={data} depth={depth} focusNodeId={focusNodeId} />
       )}
     </TreeProvider>
   );

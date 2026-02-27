@@ -35,7 +35,7 @@ function formatKeyValue(name: string | number, value: string | number | boolean 
 }
 
 const TreeNode: React.FC<TreeNodeProps> = React.memo(({ name, value, path, depth }) => {
-  const { isExpanded, toggle, matchPaths } = useTreeContext();
+  const { isExpanded, toggle, matchPaths, onShowInGraph } = useTreeContext();
   const highlighted = matchPaths.has(path);
 
   if (isPrimitive(value)) {
@@ -51,6 +51,24 @@ const TreeNode: React.FC<TreeNodeProps> = React.memo(({ name, value, path, depth
           <CopyButton text={formatPrimitive(value)} label="val" />
           <CopyButton text={formatKeyValue(name, value)} label="pair" />
           <CopyButton text={path} label="path" />
+          {onShowInGraph && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onShowInGraph(path); }}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-btn text-xs font-mono
+                bg-surface/80 hover:bg-terra-light text-text-secondary hover:text-terra
+                transition-colors cursor-pointer border border-transparent hover:border-terra/20"
+              title="Show in graph"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="4" cy="4" r="2" />
+                <circle cx="12" cy="4" r="2" />
+                <circle cx="8" cy="13" r="2" />
+                <line x1="4" y1="6" x2="8" y2="11" />
+                <line x1="12" y1="6" x2="8" y2="11" />
+              </svg>
+              <span>graph</span>
+            </button>
+          )}
         </span>
       </div>
     );
@@ -84,6 +102,24 @@ const TreeNode: React.FC<TreeNodeProps> = React.memo(({ name, value, path, depth
         <span className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pl-3">
           <CopyButton text={JSON.stringify(value, null, 2)} label="val" />
           <CopyButton text={path} label="path" />
+          {onShowInGraph && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onShowInGraph(path); }}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-btn text-xs font-mono
+                bg-surface/80 hover:bg-terra-light text-text-secondary hover:text-terra
+                transition-colors cursor-pointer border border-transparent hover:border-terra/20"
+              title="Show in graph"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="4" cy="4" r="2" />
+                <circle cx="12" cy="4" r="2" />
+                <circle cx="8" cy="13" r="2" />
+                <line x1="4" y1="6" x2="8" y2="11" />
+                <line x1="12" y1="6" x2="8" y2="11" />
+              </svg>
+              <span>graph</span>
+            </button>
+          )}
         </span>
       </div>
       {expanded && (

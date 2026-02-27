@@ -1,4 +1,5 @@
 import AppShell from '@/components/layout/AppShell';
+import EmptyState from '@/components/layout/EmptyState';
 import TabBar from '@/components/tabs/TabBar';
 import JsonInput from '@/components/json-editor/JsonInput';
 import JsonFormatter from '@/components/json-editor/JsonFormatter';
@@ -45,31 +46,31 @@ export default function FullPageApp() {
       {view === 'beautify' && (
         <div className="flex flex-col h-full gap-3">
           <JsonInput value={rawInput} onChange={handleInputChange} error={error} />
-          {parsed !== undefined && <JsonFormatter data={parsed} />}
+          {parsed !== undefined ? <JsonFormatter data={parsed} /> : <EmptyState />}
         </div>
       )}
       {view === 'tree' && (
         <div className="flex flex-col h-full gap-3">
           <JsonInput value={rawInput} onChange={handleInputChange} error={error} />
-          {parsed !== undefined && <JsonTree data={parsed} />}
+          {parsed !== undefined ? <JsonTree data={parsed} /> : <EmptyState />}
         </div>
       )}
       {view === 'compare' && <CompareView />}
       {view === 'search' && (
         <div className="flex flex-col h-full gap-3">
           <JsonInput value={rawInput} onChange={handleInputChange} error={error} />
-          {parsed !== undefined && (
+          {parsed !== undefined ? (
             <>
               <SearchOverlay data={parsed} />
               <JsonTree data={parsed} />
             </>
-          )}
+          ) : <EmptyState />}
         </div>
       )}
       {view === 'export' && (
         <div className="flex flex-col h-full gap-3">
           <JsonInput value={rawInput} onChange={handleInputChange} error={error} />
-          {parsed !== undefined && <ExportMenu data={parsed} />}
+          {parsed !== undefined ? <ExportMenu data={parsed} /> : <EmptyState />}
         </div>
       )}
     </AppShell>

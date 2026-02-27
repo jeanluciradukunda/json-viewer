@@ -13,6 +13,7 @@ interface TreeContextValue {
   copiedPath: string | null;
   searchQuery: string;
   matchPaths: Set<string>;
+  onShowInGraph?: (path: string) => void;
 }
 
 const TreeCtx = createContext<TreeContextValue | null>(null);
@@ -22,6 +23,7 @@ interface TreeProviderProps {
   children: React.ReactNode;
   searchQuery?: string;
   matchPaths?: Set<string>;
+  onShowInGraph?: (path: string) => void;
 }
 
 export const TreeProvider: React.FC<TreeProviderProps> = ({
@@ -29,6 +31,7 @@ export const TreeProvider: React.FC<TreeProviderProps> = ({
   children,
   searchQuery = '',
   matchPaths = new Set<string>(),
+  onShowInGraph,
 }) => {
   const { isExpanded, toggle, expandAll, collapseAll, expandToDepth } = useJsonTree(data);
   const { copyPath, copiedPath } = useJsonPath();
@@ -45,6 +48,7 @@ export const TreeProvider: React.FC<TreeProviderProps> = ({
         copiedPath,
         searchQuery,
         matchPaths,
+        onShowInGraph,
       }}
     >
       {children}
